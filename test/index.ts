@@ -70,7 +70,7 @@ describe("Lottery_Test_Cases", () => {
 
   });
 
-  it("Multi ticket buy with Token", async () => {
+  it.only("Multi ticket buy with Token", async () => {
     const Pair = await factory.getPair(bep_ERC20.address, weth.address);
     const pair_instance = await new UniswapV2Pair__factory(owner).attach(Pair);
 
@@ -93,7 +93,8 @@ describe("Lottery_Test_Cases", () => {
 
     console.log(" length of token ", await lottery.tokens.length);
 
-    let lottery_number = [[2, 4, 5, 6], [7, 8, 1, 3]];
+    let lottery_number = [[2, 4, 5, 6], [7, 8, 1, 3],[7, 8, 1, 3],[7, 8, 1, 3]];
+    
 
     // issue with the lottery_number
     await lottery.multiBuyWithToken(1, min_price, lottery_number);

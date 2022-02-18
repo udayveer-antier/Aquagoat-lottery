@@ -1,10 +1,5 @@
-/** Router: 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
-* WETH: 0xc778417E063141139Fce010982780140Aa0cD5Ab
-*Token1(Aquagoat): 0xa956b15259577cdFc671a813BFd66beDD3f5DF97
-* usdt: 0xFe824f3549b4dCaFe3aFe7D03655a841c3d386bF
-*/
-
-pragma solidity >=0.6.6;
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
@@ -17,7 +12,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Buyback is VRFConsumerBase, Ownable {
     using SafeMath for uint256;
     
-    address admin;
+    address public admin;
      
     bytes32 internal keyHash;
     uint256 public fee;
@@ -86,7 +81,7 @@ contract Buyback is VRFConsumerBase, Ownable {
         devAddress = _dev;
         pancakeSwapRouter = IUniswapV2Router02(_router);
         numMax = 1;//check the value before deploying
-        numMin = 1;
+        numMin = 50;
         randomResult = 10 ** 15;
         allowSwap = true;//check what should be the default value
     }
