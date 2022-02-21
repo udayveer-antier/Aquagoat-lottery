@@ -64,11 +64,16 @@ contract Lottery is LotteryOwnable, Initializable {
     //token address => amount
     mapping(address => uint256) public transferTax;
 
+    // current round
     uint256 public issueIndex;
+    // total addresses
     uint256 public totalAddresses;
+    // total amount of the pot
     uint256 public totalAmount;
+    // last round reset time
     uint256 public lastTimestamp;
 
+    // winning numbers
     uint8[4] public winningNumbers;
 
     // default false
@@ -97,6 +102,7 @@ contract Lottery is LotteryOwnable, Initializable {
     // Fallback function is called when msg.data is not empty
     fallback() external payable {}
 
+    // set the initial values of the contract
     function initialize(
         LotteryNFT _lottery,
         uint256 _minPrice,
@@ -120,6 +126,7 @@ contract Lottery is LotteryOwnable, Initializable {
         tokens.push(IERC20(_weth));
     }
 
+    // whitelist the token to buy the ticket
     function whiteListTokens(address[] memory _tokens, bool isTaxed) external onlyAdmin {
         require(_tokens.length > 0, "Lottery: Invalid length");
 
@@ -128,6 +135,7 @@ contract Lottery is LotteryOwnable, Initializable {
         }
     }
 
+    // whitelist token and give approval
     function _addToken(address _token, bool isTaxed) internal {
         require(_token != address(0), "Lottery: Invalid address");
         require(!isBlacklisted[_token], "Lottery: Blacklisted");
@@ -146,20 +154,19 @@ contract Lottery is LotteryOwnable, Initializable {
 
     }
     
+    // blacklist token from buying tickets
     function blacklistToken(address _token, bool _value) external onlyAdmin {
         require(_token != address(0), "Lottery: Invalid address");
         isBlacklisted[_token] = _value;
         emit TokenBlacklisted(_token, _value);
     }
     
+    // provide infinte approval to router
     function infiniteApprove(address _token) internal {
         IERC20(_token).approve(address(pancakeSwapRouter), (2**256) - 1);
     }
-
-    //   function executeApproval(address _token) public {
-    //     IERC20(_token).approve(address(pancakeSwapRouter), (2**256) - 1);
-    // }
     
+    // to check the tax amount
     function checkTax(address _token) internal returns (uint256) {
         uint256[] memory amountBNB = new uint256[](2);
         uint256[] memory tokenAmount = new uint256[](2);
@@ -195,14 +202,15 @@ contract Lottery is LotteryOwnable, Initializable {
         return transferTax[_token];
     }
 
+    // check if it has been drawed or not
     function drawed() public view returns(bool) {
         return winningNumbers[0] != 0;
     }
 
+    // reset the lottery winning numbers and starting new round
     function reset() external onlyAdmin {
         require(drawed(), "drawed?");
         lastTimestamp = block.timestamp;
-        totalAddresses = 0;
         winningNumbers[0] = 0;
         winningNumbers[1] = 0;
         winningNumbers[2] = 0;
@@ -212,6 +220,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit Reset(issueIndex);
     }
 
+    // start the drawing period
     function enterDrawingPhase() external onlyAdmin {
         require(!drawed(), "Lottery: Drawed");
         drawingPhase = true;
@@ -244,7 +253,6 @@ contract Lottery is LotteryOwnable, Initializable {
         _randomNumber  = uint256(_structHash);
         assembly {_randomNumber := add(mod(_randomNumber, _maxNumber),1)}
         winningNumbers[0]=uint8(_randomNumber);
-        // winningNumbers[0]=uint8(1);
 
         // 2
         _structHash = keccak256(
@@ -258,7 +266,6 @@ contract Lottery is LotteryOwnable, Initializable {
         _randomNumber  = uint256(_structHash);
         assembly {_randomNumber := add(mod(_randomNumber, _maxNumber),1)}
         winningNumbers[1]=uint8(_randomNumber);
-        // winningNumbers[1]=uint8(2);
 
         // 3
         _structHash = keccak256(
@@ -272,7 +279,6 @@ contract Lottery is LotteryOwnable, Initializable {
         _randomNumber  = uint256(_structHash);
         assembly {_randomNumber := add(mod(_randomNumber, _maxNumber),1)}
         winningNumbers[2]=uint8(_randomNumber);
-        // winningNumbers[2]=uint8(3);
 
         // 4
         _structHash = keccak256(
@@ -285,13 +291,13 @@ contract Lottery is LotteryOwnable, Initializable {
         _randomNumber  = uint256(_structHash);
         assembly {_randomNumber := add(mod(_randomNumber, _maxNumber),1)}
         winningNumbers[3]=uint8(_randomNumber);
-        // winningNumbers[3] = uint8(4);
         historyNumbers[issueIndex] = winningNumbers;
         historyAmount[issueIndex] = calculateMatchingRewardAmount();
         drawingPhase = false;
         emit Drawing(issueIndex, winningNumbers);
     }
     
+    // buy multiple tickets with a particular token
     function  multiBuyWithToken(uint256 _listId, uint256 _price, uint8[4][] memory _numbers) external {
         address _token = address(tokens[_listId]);
 
@@ -335,6 +341,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit MultiBuy(msg.sender, totalPrice, _numbers);
     }
     
+    // buy multiple tickets with bnb
     function multiBuyWithBNB(uint8[4][] memory _numbers) payable external {
         uint256 _minPrice = _numbers.length * minPrice;
         require(msg.value >= _minPrice, "minimum value not sent");
@@ -367,6 +374,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit MultiBuy(msg.sender, _price, _numbers);
     }
 
+    // swap tokens with bnb
     function swapToken(address _token, uint256 _price, uint256 _ticketCount) internal returns(uint256) {
         uint256[] memory amount = new uint256[](2);
         uint256[] memory amountBNB;
@@ -393,6 +401,7 @@ contract Lottery is LotteryOwnable, Initializable {
         return amount[1].sub(bbShare);
     }
 
+    // claim the reward for single ticket
     function claimReward(uint256 _tokenId) external {
         require(msg.sender == lotteryNFT.ownerOf(_tokenId), "not from owner");
         require (!lotteryNFT.getClaimStatus(_tokenId), "claimed");
@@ -409,6 +418,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit Claim(msg.sender, _tokenId, reward);
     }
 
+    // claim reward for multiple tickets
     function  multiClaim(uint256[] memory _tickets) external {
         uint256 totalReward = 0;
         for (uint i = 0; i < _tickets.length; i++) {
@@ -428,6 +438,7 @@ contract Lottery is LotteryOwnable, Initializable {
         lastClaimIndex[msg.sender] = issueIndex-1;
         emit MultiClaim(msg.sender, totalReward);
     }
+
 
     function generateNumberIndexKey(uint8[4] memory number) public pure returns (uint64[keyLengthForEachBuy] memory) {
         uint64[4] memory tempNumber;
@@ -512,7 +523,7 @@ contract Lottery is LotteryOwnable, Initializable {
         return reward.div(1e12);
     }
 
-    //get the length of the token array
+    // get the length of the token array
     function getTokensLength() public view returns(IERC20[] memory) {
         return tokens;
     }
@@ -544,34 +555,40 @@ contract Lottery is LotteryOwnable, Initializable {
         allocation = [_allcation1, _allcation2, _allcation3];
     }
     
+    // Set the buyback address
     function setBuyback(address _buyback) external onlyAdmin {
         require(_buyback != address(buyback),"Lottery: Same buyback address sent");
         buyback = IBuyBack(_buyback);
     }
 
-    //Get the length of the array of tokenIds
+    // Get the length of the array of tokenIds
     function getCurrentLength(address _user, uint256 _issueIndex) public view returns(uint256[] memory){
         return currentTickets[_user][_issueIndex];
     }
     
+    // Set the lottery NFT address
     function setLotteryNFT(LotteryNFT _nft) public onlyAdmin {
         require(lotteryNFT != _nft, "Lottery: Same address sent");
         lotteryNFT = _nft;
     }
     
+    // Set the buyback share per ticket
     function setBuyBackShare(uint256 _value) public onlyAdmin {
         buyBackShare = _value;
     }
 
+    // Set the router address of the DEX
     function setRouterAddress(address newAddress) external onlyAdmin {
         require(newAddress !=  address(0), "Lottery: Zero address");
         pancakeSwapRouter = IUniswapV2Router02(newAddress);
     }
 
+    // Get the router address of the DEX used to swap tokens
     function getRouter() external view returns (address) {
         return address(pancakeSwapRouter);
     }
     
+    // Get the claim amount of the user between specific rounds
     function getClaimAmount(address _user, uint start, uint end) public view returns(uint totalReward) {
         uint id = start;
         for(uint i=id; i< end; i++) {

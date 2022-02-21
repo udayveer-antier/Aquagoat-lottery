@@ -16,6 +16,7 @@ contract Buyback is VRFConsumerBase, Ownable {
      
     bytes32 internal keyHash;
     uint256 public fee;
+   
     //Random number generated
     uint256 public randomResult;
     //Swap of BNB to Aquagoat token
@@ -32,7 +33,7 @@ contract Buyback is VRFConsumerBase, Ownable {
     //WETH address
     address public WETH;
     //Aquagoat token
-    address public AquaToken;
+    address public aquaToken;
     
     //charity address
     address payable public charityAddress;
@@ -74,16 +75,16 @@ contract Buyback is VRFConsumerBase, Ownable {
         
         admin = msg.sender;
         WETH = _weth;
-        AquaToken = _aquaToken;
+        aquaToken = _aquaToken;
         path.push(_weth);
         path.push(_aquaToken);
         charityAddress= _charity;
         devAddress = _dev;
         pancakeSwapRouter = IUniswapV2Router02(_router);
-        numMax = 1;//check the value before deploying
+        numMax = 1;
         numMin = 50;
         randomResult = 10 ** 15;
-        allowSwap = true;//check what should be the default value
+        allowSwap = true;
     }
     
       receive() external payable {}
@@ -112,11 +113,11 @@ contract Buyback is VRFConsumerBase, Ownable {
             uint256[] memory amount = new uint256[](2); 
             amount = pancakeSwapRouter.swapExactETHForTokens{value: bal}(amountOutMin, path, address(this), block.timestamp + 20*60);
 
-            uint256 AquaBal = IERC20(AquaToken).balanceOf(address(this));
+            uint256 AquaBal = IERC20(aquaToken).balanceOf(address(this));
             require(AquaBal >= amount[1],"Less AquaToken received");
-            IERC20(AquaToken).transfer(address(devAddress), (AquaBal.mul(devShare)).div(1000));
+            IERC20(aquaToken).transfer(address(devAddress), (AquaBal.mul(devShare)).div(1000));
             //it should be charity cross check this
-            IERC20(AquaToken).transfer(address(charityAddress), (AquaBal.mul(1000 - devShare)).div(1000));
+            IERC20(aquaToken).transfer(address(charityAddress), (AquaBal.mul(1000 - devShare)).div(1000));
             return getRandomNumber();
         }
 
@@ -127,7 +128,7 @@ contract Buyback is VRFConsumerBase, Ownable {
     function setPath(address _weth,address _aquaToken) public onlyAdmin {
         delete path;
         WETH = _weth;
-        AquaToken = _aquaToken;
+        aquaToken = _aquaToken;
         path.push(_weth);
         path.push(_aquaToken);
     }
@@ -158,7 +159,7 @@ contract Buyback is VRFConsumerBase, Ownable {
     
     function setAquagoatToken(address _token) public onlyAdmin {
         require(_token != address(0),"Buyback: Zero address is sent");
-        AquaToken = _token;
+        aquaToken = _token;
     }
 
     function setRandomResult(uint256 newValue) external onlyAdmin {

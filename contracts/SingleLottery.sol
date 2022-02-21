@@ -45,11 +45,16 @@ contract Lottery is LotteryOwnable, Initializable {
     //address => issueIndex
     mapping (address => uint256) public lastClaimIndex;
 
+    // current round
     uint256 public issueIndex;
+    // total addresses
     uint256 public totalAddresses;
+    // total amount of the pot
     uint256 public totalAmount;
+    // last round reset time
     uint256 public lastTimestamp;
 
+    // winning numbers
     uint8[4] public winningNumbers;
 
     // default false
@@ -65,6 +70,12 @@ contract Lottery is LotteryOwnable, Initializable {
     event MultiClaim(address indexed user, uint256 amount);
     event SingleTokenMultiBuy(address indexed user, uint256 amount, uint8[4][] numbers);
 
+    modifier onlyAdmin() {
+        require(msg.sender == adminAddress, "admin: wut?");
+        _;
+    }
+
+    // Set the initial values of the contract
     function initialize(
         IERC20 _aquagoatToken,
         LotteryNFT _lottery,
@@ -83,17 +94,12 @@ contract Lottery is LotteryOwnable, Initializable {
         initOwner(_owner);
     }
 
-    uint8[4] private nullTicket = [0,0,0,0];
-
-    modifier onlyAdmin() {
-        require(msg.sender == adminAddress, "admin: wut?");
-        _;
-    }
-
+    // check if it has been drawed or not
     function drawed() public view returns(bool) {
         return winningNumbers[0] != 0;
     }
 
+    // reset the lottery winning numbers and starting new round
     function reset() external onlyAdmin {
         require(drawed(), "drawed?");
         lastTimestamp = block.timestamp;
@@ -107,6 +113,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit Reset(issueIndex);
     }
 
+    // start the drawing period
     function enterDrawingPhase() external onlyAdmin {
         require(!drawed(), "drawed");
         drawingPhase = true;
@@ -184,19 +191,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit SingleTokenDrawing(issueIndex, winningNumbers);
     }
 
-    function internalBuy(uint256 _price, uint8[4] memory _numbers) internal {
-        require (!drawed(), "drawed, can not buy now");
-        for (uint i = 0; i < 4; i++) {
-            require (_numbers[i] <= maxNumber, "exceed the maximum");
-        }
-        uint256 tokenId = lotteryNFT.newLotteryItem(address(this), _numbers, _price, issueIndex);
-        lotteryInfo[issueIndex].push(tokenId);
-        totalAmount = totalAmount.add(_price);
-        lastTimestamp = block.timestamp;
-        emit Buy(address(this), tokenId);
-
-    }
-
+    // Buy a single ticket
     function buy(uint256 _price, uint8[4] memory _numbers) external {
         require(!drawed(), "drawed, can not buy now");
         require(!drawingPhase, "drawing, can not buy now");
@@ -228,6 +223,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit Buy(msg.sender, tokenId);
     }
 
+    // Buy multiple tickets
     function  multiBuy(uint256 _price, uint8[4][] memory _numbers) external {
         require(!drawed(), "drawed, can not buy now");
         require(!drawingPhase, "drawing, can not buy now");
@@ -261,6 +257,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit SingleTokenMultiBuy(msg.sender, totalPrice, _numbers);
     }
 
+    // Claim reward for single ticket
     function claimReward(uint256 _tokenId) external {
         require(msg.sender == lotteryNFT.ownerOf(_tokenId), "not from owner");
         require (!lotteryNFT.getClaimStatus(_tokenId), "claimed");
@@ -277,6 +274,7 @@ contract Lottery is LotteryOwnable, Initializable {
         emit Claim(msg.sender, _tokenId, reward);
     }
 
+    // Claim reward for multiple tickets
     function  multiClaim(uint256[] memory _tickets) external {
         uint256 totalReward = 0;
 
@@ -350,10 +348,12 @@ contract Lottery is LotteryOwnable, Initializable {
         return [totalAmount, totalAmout1, totalAmout2, totalAmout3];
     }
 
+    // Get the matching reward amount
     function getMatchingRewardAmount(uint256 _issueIndex, uint256 _matchingNumber) public view returns (uint256) {
         return historyAmount[_issueIndex][5 - _matchingNumber];
     }
 
+    // Get the total rewards for a round
     function getTotalRewards(uint256 _issueIndex) public view returns(uint256) {
         require (_issueIndex <= issueIndex, "_issueIndex <= issueIndex");
 
@@ -363,6 +363,7 @@ contract Lottery is LotteryOwnable, Initializable {
         return historyAmount[_issueIndex][0];
     }
 
+    // Get the reward amount for a ticket
     function getRewardView(uint256 _tokenId) public view returns(uint256) {
         uint256 _issueIndex = lotteryNFT.getLotteryIssueIndex(_tokenId);
         uint8[4] memory lotteryNumbers = lotteryNFT.getLotteryNumbers(_tokenId);
@@ -416,6 +417,7 @@ contract Lottery is LotteryOwnable, Initializable {
         return currentTickets[_user][_issueIndex];
     }
 
+    // Get the claim amount of the user between specific rounds
     function getClaimAmount(address _user, uint start, uint end) public view returns(uint totalReward) {
         uint id = start;
         for(uint i=id; i<= end; i++) {
