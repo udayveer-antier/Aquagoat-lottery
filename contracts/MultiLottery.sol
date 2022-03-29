@@ -129,6 +129,7 @@ contract Lottery is LotteryOwnable, Initializable {
     // whitelist the token to buy the ticket
     function whiteListTokens(address[] memory _tokens, bool isTaxed) external onlyAdmin {
         require(_tokens.length > 0, "Lottery: Invalid length");
+        require(_tokens.length < 51, "Lottery: Length exceeds");
 
         for (uint256 i; i < _tokens.length; i++) {
             _addToken(_tokens[i], isTaxed);
@@ -305,6 +306,7 @@ contract Lottery is LotteryOwnable, Initializable {
         require(!drawed(), "drawed, can not buy now");
         require(!drawingPhase, "drawing, can not buy now");
         require(!isBlacklisted[_token], "Lottery: Blacklisted");
+        require(_numbers.length < 51, "Lottery: length exceeds");
 
         uint256 ticketCount = uint256(_numbers.length);
         uint256 totalPrice  = ticketCount * _price;
@@ -345,6 +347,7 @@ contract Lottery is LotteryOwnable, Initializable {
     function multiBuyWithBNB(uint8[4][] memory _numbers) payable external {
         uint256 _minPrice = _numbers.length * minPrice;
         require(msg.value >= _minPrice, "minimum value not sent");
+        require(_numbers.length < 51, "Lottery: length exceeds");
         uint256 _price = msg.value;
 
         for (uint i = 0; i < _numbers.length; i++) {
@@ -420,6 +423,7 @@ contract Lottery is LotteryOwnable, Initializable {
 
     // claim reward for multiple tickets
     function  multiClaim(uint256[] memory _tickets) external {
+        require(_tickets.length < 51, "Lottery: length exceeds");
         uint256 totalReward = 0;
         for (uint i = 0; i < _tickets.length; i++) {
             require (msg.sender == lotteryNFT.ownerOf(_tickets[i]), "not from owner");

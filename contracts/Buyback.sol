@@ -66,12 +66,12 @@ contract Buyback is VRFConsumerBase, Ownable {
      //change the address for BSC mainnet
     constructor(address _weth, address _aquaToken, address payable _charity, address payable _dev, address _router)
         VRFConsumerBase(
-            0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B, // VRF Coordinator
-            0x01BE23585060835E02B77ef475b0Cc51aA1e0709  // LINK Token
+            0x747973a5A2a4Ae1D3a8fDF5479f1514F65Db9C31, // VRF Coordinator
+            0x404460C6A5EdE2D891e8297795264fDe62ADBB75  // LINK Token
         )
     {
-        keyHash = 0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311;
-        fee = 0.1 * 10 ** 18; // 0.1 LINK (Varies by network)
+        keyHash = 0xc251acd21ec4fb7f31bb8868288bfdbaeb4fbfec2df3735ddbd4f7dc8d60103c;
+        fee = 0.2 * 10 ** 18;
         
         admin = msg.sender;
         WETH = _weth;
@@ -87,7 +87,7 @@ contract Buyback is VRFConsumerBase, Ownable {
         allowSwap = true;
     }
     
-      receive() external payable {}
+    receive() external payable {}
     
     /** 
      * Requests randomness 
@@ -96,7 +96,6 @@ contract Buyback is VRFConsumerBase, Ownable {
         require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK - fill contract with faucet");
         return requestRandomness(keyHash, fee);
     }
- 
 
     /**
      * Callback function used by VRF Coordinator
@@ -160,11 +159,6 @@ contract Buyback is VRFConsumerBase, Ownable {
     function setAquagoatToken(address _token) public onlyAdmin {
         require(_token != address(0),"Buyback: Zero address is sent");
         aquaToken = _token;
-    }
-
-    function setRandomResult(uint256 newValue) external onlyAdmin {
-        require(newValue > 0, "Buyback: Invalid value");
-        randomResult = newValue;
     }
     
     function adminWithdrawal() external onlyAdmin {

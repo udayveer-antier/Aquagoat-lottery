@@ -228,6 +228,7 @@ contract Lottery is LotteryOwnable, Initializable {
         require(!drawed(), "drawed, can not buy now");
         require(!drawingPhase, "drawing, can not buy now");
         require(_price >= minPrice, "price must above minPrice");
+        require(_numbers.length < 51, "Lottery: length exceeds");
         uint256 totalPrice = (_numbers.length.mul(_price));
 
         aquagoatToken.safeTransferFrom(address(msg.sender), address(this), totalPrice);
@@ -276,6 +277,7 @@ contract Lottery is LotteryOwnable, Initializable {
 
     // Claim reward for multiple tickets
     function  multiClaim(uint256[] memory _tickets) external {
+        require(_tickets.length < 51, "Lottery: length exceeds");
         uint256 totalReward = 0;
 
         for (uint i = 0; i < _tickets.length; i++) {
